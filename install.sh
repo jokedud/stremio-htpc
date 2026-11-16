@@ -39,11 +39,12 @@ elif ! command -v keyd >/dev/null; then
 fi
 stage=$(mktemp -d)
 trap 'rm -rf "${build:-}" "${stage:-}"' EXIT
-for file in lib/settings.py lib/addons.py lib/kiosk.sh lib/session.sh lib/restart.sh lib/keyd.conf addons.txt uninstall.sh; do
+for file in lib/settings.py lib/addons.py lib/kiosk.sh lib/session.sh lib/restart.sh lib/keyd.conf lib/pair.py addons.txt uninstall.sh; do
     mkdir -p "$stage/$(dirname "$file")"
     curl -fsSL --retry 3 "$REPO_RAW/$file" -o "$stage/$file"
 done
 install -d -m 755 /usr/local/lib/stremio-htpc /etc/stremio-htpc /etc/keyd
+install -m 755 "$stage/lib/pair.py" /usr/local/lib/stremio-htpc/pair.py
 install -m 644 "$stage/lib/settings.py" /usr/local/lib/stremio-htpc/settings.py
 for file in addons.py kiosk.sh session.sh restart.sh; do
     install -m 755 "$stage/lib/$file" "/usr/local/lib/stremio-htpc/$file"
@@ -122,9 +123,28 @@ if [[ ! -e /etc/stremio-htpc/keyd-managed ]]; then
     touch /etc/stremio-htpc/keyd-managed
 fi
 install -m 644 "$stage/lib/keyd.conf" /etc/keyd/default.conf
+cat > /etc/systemd/system/stremio-htpc-pair.service <<'PAIR'
+[Unit]
+Description=Automatic Fire TV remote pairing
+After=bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+ExecStart=/usr/bin/python3 -u /usr/local/lib/stremio-htpc/pair.py
+Restart=on-failure
+RestartSec=15
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
+PAIR
 if [[ ${SKIP_SYSTEMD:-0} != 1 ]]; then
     systemctl daemon-reload
     systemctl enable --now bluetooth.service keyd.service
+    systemctl enable --now stremio-htpc-pair.service
     systemctl restart keyd.service
     systemctl enable getty@tty1.service
     loginctl enable-linger "$user"
@@ -139,4 +159,4 @@ else
     log 'Addons not synced: run sudo stremio-htpc-addons, or use the manual deep links described in README.'
 fi
 unset STREMIO_PASSWORD
-log "Installed for $user. Pair your remote, then reboot. tty1 will autologin (physical access is trusted)."
+log "Installed for $user. Hold remote Home ~10s for automatic pairing, then reboot. tty1 will autologin (physical access is trusted)."

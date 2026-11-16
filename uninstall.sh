@@ -4,6 +4,10 @@ set -euo pipefail
 [[ -f /etc/stremio-htpc/user ]] || { echo 'No managed installation found.'; exit 0; }
 user=$(cat /etc/stremio-htpc/user)
 home=$(getent passwd "$user" | cut -d: -f6)
+if [[ -d /run/systemd/system ]]; then
+    systemctl disable --now stremio-htpc-pair.service || true
+fi
+rm -f /etc/systemd/system/stremio-htpc-pair.service
 dropin=/etc/systemd/system/getty@tty1.service.d/stremio-htpc.conf
 rm -f "$dropin"
 if [[ -f /etc/stremio-htpc/getty.original ]]; then

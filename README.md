@@ -78,10 +78,18 @@ Do not copy private URLs into shared command histories.
 
 ## Pair the Fire TV remote
 
-Disconnect the remote from its previous Fire TV if necessary. Hold **Home ~10s**
-until its indicator flashes, then from SSH or a temporary keyboard:
+Disconnect the remote from its previous Fire TV if necessary. Near the box, hold
+**Home ~10s** until its indicator flashes; it pairs automatically within about a
+minute. No keyboard or SSH is needed. The background service only pairs devices
+identified as Fire TV remotes (by name or Amazon vendor ID). Once a remote is
+paired and trusted, scanning stops and the service reconnects it as needed.
+
+If pairing fails, check `sudo journalctl -u stremio-htpc-pair` from SSH. Some
+generations require a different pairing gesture/agent. For manual troubleshooting,
+stop automatic pairing first, then use the remote's MAC from `scan on`:
 
 ```text
+sudo systemctl stop stremio-htpc-pair
 sudo bluetoothctl
 power on
 agent NoInputNoOutput
@@ -93,9 +101,10 @@ trust AA:BB:CC:DD:EE:FF
 connect AA:BB:CC:DD:EE:FF
 scan off
 quit
+sudo systemctl start stremio-htpc-pair
 ```
 
-Some generations require a different pairing gesture/agent. Reboot after installation;
+Reboot after installation;
 autologin is enabled but the installer deliberately does not restart your active tty.
 
 ## Button map
