@@ -104,12 +104,12 @@ autologin is enabled but the installer deliberately does not restart your active
 |---|---|
 | D-pad `up/down/left/right` | Arrow keys |
 | Select emitting `enter` / `kpenter` | Enter |
-| Back `back` / `backspace` / Escape | Escape |
+| Back `back` / Escape | Escape |
 | `playpause`, `play`, `pause` | Space |
 | `rewind` / `fastforward` | Left / right (seek) |
 | `menu` | F11 (fullscreen toggle; Cage also constrains the window) |
-| Home `homepage` / `home`, short tap | Escape |
-| Home held alone ~1.5s | Kill only the kiosk user's Stremio; loop relaunches it |
+| Remote Home `homepage`, short tap | Escape |
+| Remote Home `homepage` held alone ~1.5s | Kill only the kiosk user's Stremio; loop relaunches it |
 | Ctrl+Alt+Backspace on a keyboard | Same kill switch |
 | `volumeup`, `volumedown`, `mute` | Passed through unchanged |
 
@@ -118,7 +118,8 @@ are verified keyd names, **not verified captures from your particular remote**.
 Published [Fire TV Remote evtest output (1949:0404)](https://forum.kodi.tv/showthread.php?pid=1931078)
 reports KPEnter, arrows, Menu, Back, PlayPause, Rewind, Homepage and FastForward;
 the [OSMC Fire TV mapping](https://discourse.osmc.tv/t/rpi2-support-for-fire-tv-stick-remote-bluetooth/5738)
-independently lists the same keys. Enter/Home/Play/Pause are compatibility variants.
+independently lists the same keys. Enter/Play/Pause are compatibility variants.
+Keyboard Backspace and Home retain their normal behavior.
 keyd v2.5.0's name table handles only codes below 256 and does **not** support
 `KEY_SELECT` (353). If your remote emits that code instead of `KEY_ENTER` (28) or
 `KEY_KPENTER` (96), it needs a device-specific HID/udev remap before keyd; this
