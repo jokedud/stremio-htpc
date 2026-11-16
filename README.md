@@ -5,8 +5,9 @@ controlled with an Amazon Fire TV Bluetooth remote. Installs Flathub Stremio,
 BlueZ, keyd, Cage/Xwayland, PipeWire audio and available Mesa/Intel VA-API drivers.
 tty1 automatically logs in and starts a restart-loop kiosk. No desktop is needed.
 
-**Status:** initial implementation; macOS static/unit checks only. Real Linux boot,
-Bluetooth, video playback, audio, GPU acceleration and remote timing are unverified.
+**Status:** installation and real Stremio launch tested in an Ubuntu 24.04 systemd
+container with nested Cage/software rendering. Physical Linux boot, Bluetooth,
+video playback, audio, GPU acceleration and remote timing remain unverified.
 Use a dedicated machine, not a desktop whose existing keyd/profile configuration you
 need to preserve unchanged. The wildcard keyd map affects attached keyboards too.
 
@@ -211,7 +212,11 @@ can read local keyboard events.
 for file in install.sh uninstall.sh lib/*.sh; do bash -n "$file" || exit; done
 shellcheck install.sh uninstall.sh lib/*.sh
 python3 -m unittest discover -s tests -v
+sudo python3 -m unittest discover -s tests -p test_install.py -v
 ```
+
+The root-only provisioning regression checks create a temporary home and run its
+Flatpak directory writes as `nobody`; they do not install the appliance on the host.
 
 For container provisioning checks, serve this checkout from a trusted reachable
 HTTP server and set `REPO_RAW` to it, then run in a disposable Debian 12/Ubuntu 24.04

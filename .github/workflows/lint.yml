@@ -7,3 +7,4 @@ jobs:
       - uses: actions/checkout@v4
       - run: shellcheck install.sh uninstall.sh lib/*.sh
       - run: python3 -m unittest discover -s tests -v
+      - run: sudo python3 -m unittest discover -s tests -p test_install.py -v
