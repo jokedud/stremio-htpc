@@ -52,7 +52,8 @@ class PairTests(unittest.TestCase):
 
     def test_identification(self):
         for info in ({'Name': 'Amazon Fire TV Remote'}, {'Alias': 'Fire TV'},
-                     {'Modalias': 'usb:v1949p0404d0110'}):
+                     {'Modalias': 'usb:v1949p0404d0110'},
+                     {'Modalias': 'bluetooth:v1949p0404d0110'}):
             self.assertTrue(pair.is_fire_tv(info))
         for info in ({}, {'Name': 'Keyboard'}, {'Name': 'Amazon Echo'},
                      {'Name': 'Bonfire TV'}, {'Modalias': 'usb:v1234p1949d0001'}):

@@ -20,7 +20,7 @@ def parse_info(output):
 def is_fire_tv(info):
     names = ' '.join(info.get(key, '') for key in ('Name', 'Alias'))
     return bool(re.search(r'\bfire\s*tv\b', names, re.I)
-                or re.fullmatch(r'usb:v1949p[0-9a-f]+d[0-9a-f]+',
+                or re.fullmatch(r'(?:usb|bluetooth):v1949p[0-9a-f]+d[0-9a-f]+',
                                 info.get('Modalias', ''), re.I))
 
 
