@@ -9,6 +9,8 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 CONFIG = Path('/etc/stremio-htpc')
+OFFICIAL_URLS = ('https://v3-cinemeta.strem.io/manifest.json',
+                 'https://opensubtitles-v3.strem.io/manifest.json')
 
 
 def request(url, payload=None):
@@ -37,6 +39,18 @@ def read_urls():
         if parsed.scheme != 'https' or not parsed.netloc or not parsed.path.endswith('/manifest.json'):
             raise ValueError('Addon URLs must be HTTPS manifest.json URLs')
     return list(dict.fromkeys(urls))
+
+
+def descriptors(urls):
+    result = []
+    for url in dict.fromkeys(urls):
+        manifest = request(url)
+        if not isinstance(manifest, dict) or not all(k in manifest for k in ('id', 'version', 'name', 'resources', 'types', 'catalogs')):
+            raise ValueError('Invalid addon manifest; profile left unchanged')
+        result.append({'transportUrl': url, 'manifest': manifest,
+                       'flags': {'official': url in OFFICIAL_URLS,
+                                 'protected': url == OFFICIAL_URLS[0]}})
+    return result
 
 
 def sync(urls, email, password):
@@ -70,6 +84,9 @@ def sync(urls, email, password):
 def main():
     if os.geteuid() != 0:
         raise ValueError('Run with sudo to read private addons')
+    if sys.argv[1:] == ['--descriptors']:
+        json.dump(descriptors([*OFFICIAL_URLS, *read_urls()]), sys.stdout)
+        return
     email = os.environ.get('STREMIO_EMAIL') or input('Stremio email: ')
     password = os.environ.pop('STREMIO_PASSWORD', '') or getpass.getpass('Stremio password: ')
     if not email or not password:
@@ -82,5 +99,5 @@ if __name__ == '__main__':
     try:
         main()
     except (Exception, KeyboardInterrupt):
-        print('Addon sync failed; check credentials, network and manifest availability. No secrets logged.', file=sys.stderr)
+        print('Addon setup failed; check credentials, network and manifest availability. No secrets logged.', file=sys.stderr)
         sys.exit(1)

@@ -39,13 +39,17 @@ elif ! command -v keyd >/dev/null; then
 fi
 stage=$(mktemp -d)
 trap 'rm -rf "${build:-}" "${stage:-}"' EXIT
-for file in lib/settings.py lib/addons.py lib/kiosk.sh lib/session.sh lib/restart.sh lib/keyd.conf addons.txt uninstall.sh; do
+for file in lib/settings.py lib/addons.py lib/guest.py lib/kiosk.sh lib/session.sh lib/restart.sh lib/keyd.conf addons.txt uninstall.sh; do
     mkdir -p "$stage/$(dirname "$file")"
-    curl -fsSL --retry 3 "$REPO_RAW/$file" -o "$stage/$file"
+    if [[ -n ${HTPC_SOURCE_DIR:-} ]]; then
+        cp "$HTPC_SOURCE_DIR/$file" "$stage/$file"
+    else
+        curl -fsSL --retry 3 "$REPO_RAW/$file" -o "$stage/$file"
+    fi
 done
 install -d -m 755 /usr/local/lib/stremio-htpc /etc/stremio-htpc /etc/keyd
 install -m 644 "$stage/lib/settings.py" /usr/local/lib/stremio-htpc/settings.py
-for file in addons.py kiosk.sh session.sh restart.sh; do
+for file in addons.py guest.py kiosk.sh session.sh restart.sh; do
     install -m 755 "$stage/lib/$file" "/usr/local/lib/stremio-htpc/$file"
 done
 install -m 755 "$stage/uninstall.sh" /usr/local/sbin/stremio-htpc-uninstall
@@ -53,14 +57,18 @@ ln -sf /usr/local/lib/stremio-htpc/addons.py /usr/local/sbin/stremio-htpc-addons
 install -m 644 "$stage/addons.txt" /etc/stremio-htpc/addons.txt
 printf '%s\n' "$user" > /etc/stremio-htpc/user
 chmod 644 /etc/stremio-htpc/user
-if [[ -n ${EXTRA_ADDONS:-} ]]; then
+if [[ -n ${EXTRA_ADDONS:-} || -f ${HTPC_SOURCE_DIR:-/nonexistent}/addons.local ]]; then
     touch /etc/stremio-htpc/addons.local
     chmod 600 /etc/stremio-htpc/addons.local
-    EXTRA_ADDONS="$EXTRA_ADDONS" python3 - <<'PY'
+    EXTRA_ADDONS="${EXTRA_ADDONS:-}" python3 - <<'PY'
 import os
 from pathlib import Path
 p = Path('/etc/stremio-htpc/addons.local')
-p.write_text('\n'.join(dict.fromkeys(p.read_text().split() + os.environ['EXTRA_ADDONS'].split())) + '\n')
+urls = p.read_text().split() + os.environ.get('EXTRA_ADDONS', '').split()
+source = Path(os.environ.get('HTPC_SOURCE_DIR', '/nonexistent')) / 'addons.local'
+if source.is_file():
+    urls += source.read_text().split()
+p.write_text('\n'.join(dict.fromkeys(urls)) + '\n')
 PY
 fi
 unset EXTRA_ADDONS
@@ -80,6 +88,14 @@ if [[ ${SKIP_FLATPAK:-0} != 1 ]]; then
     flatpak update --system --noninteractive -y com.stremio.Stremio
 else
     log 'SKIP_FLATPAK=1: Stremio and GPU runtimes NOT installed.'
+fi
+for base in "$home/.var" "$home/.var/app" "$home/.var/app/com.stremio.Stremio"; do
+    install -d -o "$user" -g "$(id -gn "$user")" -m 700 "$base"
+done
+if [[ ! -e $home/.var/app/com.stremio.Stremio/data/stremio/storage ]]; then
+    /usr/local/lib/stremio-htpc/addons.py --descriptors | runuser -u "$user" -- python3 /usr/local/lib/stremio-htpc/guest.py "$home"
+else
+    log 'Existing Stremio storage retained; guest addon setup skipped.'
 fi
 for base in "$home/.stremio-server" "$home/.var/app/com.stremio.Stremio/.stremio-server"; do
     install -d -o "$user" -g "$(id -gn "$user")" -m 700 "$base"
@@ -136,7 +152,7 @@ fi
 if [[ -n ${STREMIO_EMAIL:-} ]]; then
     /usr/local/sbin/stremio-htpc-addons
 else
-    log 'Addons not synced: run sudo stremio-htpc-addons, or use the manual deep links described in README.'
+    log 'No account sync requested; fresh installations use the local guest addon profile.'
 fi
 unset STREMIO_PASSWORD
 log "Installed for $user. Pair your remote, then reboot. tty1 will autologin (physical access is trusted)."
