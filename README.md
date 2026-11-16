@@ -211,7 +211,11 @@ can read local keyboard events.
 for file in install.sh uninstall.sh lib/*.sh; do bash -n "$file" || exit; done
 shellcheck install.sh uninstall.sh lib/*.sh
 python3 -m unittest discover -s tests -v
+sudo python3 -m unittest discover -s tests -p test_install.py -v
 ```
+
+The root-only provisioning regression checks create a temporary home and run its
+Flatpak directory writes as `nobody`; they do not install the appliance on the host.
 
 For container provisioning checks, serve this checkout from a trusted reachable
 HTTP server and set `REPO_RAW` to it, then run in a disposable Debian 12/Ubuntu 24.04

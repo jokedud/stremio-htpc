@@ -81,6 +81,9 @@ if [[ ${SKIP_FLATPAK:-0} != 1 ]]; then
 else
     log 'SKIP_FLATPAK=1: Stremio and GPU runtimes NOT installed.'
 fi
+for base in "$home/.var" "$home/.var/app" "$home/.var/app/com.stremio.Stremio"; do
+    install -d -o "$user" -g "$(id -gn "$user")" -m 700 "$base"
+done
 for base in "$home/.stremio-server" "$home/.var/app/com.stremio.Stremio/.stremio-server"; do
     install -d -o "$user" -g "$(id -gn "$user")" -m 700 "$base"
     runuser -u "$user" -- python3 /usr/local/lib/stremio-htpc/settings.py "$base/server-settings.json"
