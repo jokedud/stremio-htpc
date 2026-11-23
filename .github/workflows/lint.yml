@@ -25,7 +25,7 @@ jobs:
           if ($result.FailedCount -gt 0) { exit 1 }
       - shell: powershell
         run: |
-          Invoke-WebRequest -UseBasicParsing https://www.autohotkey.com/download/2.0/AutoHotkey_2.0.32.zip -OutFile ahk.zip
+          Invoke-WebRequest -UseBasicParsing https://github.com/AutoHotkey/AutoHotkey/releases/download/v2.0.32/AutoHotkey_2.0.32.zip -OutFile ahk.zip
           if ((Get-FileHash ahk.zip).Hash -ne '384A4C125E8D7B5B77DDBD5A593EC761D3E9E96E97A95931CF56E9A077FDA114') { exit 1 }
           Expand-Archive ahk.zip ahk
           $p = Start-Process ahk\AutoHotkey64.exe -ArgumentList '/ErrorStdOut', '/Validate', 'windows\kiosk.ahk' -Wait -PassThru -NoNewWindow

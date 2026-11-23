@@ -19,7 +19,7 @@ $ProgressPreference = 'SilentlyContinue'
 
 $StremioUrl = 'https://dl.strem.io/stremio-shell-ng/v5.0.24/StremioSetup-v5.0.24_x64.exe'
 $WireGuardUrl = 'https://download.wireguard.com/windows-client/wireguard-amd64-1.1.1.msi'
-$AutoHotkeyUrl = 'https://www.autohotkey.com/download/2.0/AutoHotkey_2.0.32.zip'
+$AutoHotkeyUrl = 'https://github.com/AutoHotkey/AutoHotkey/releases/download/v2.0.32/AutoHotkey_2.0.32.zip'
 $AutoHotkeySha256 = '384A4C125E8D7B5B77DDBD5A593EC761D3E9E96E97A95931CF56E9A077FDA114'
 $InstallDir = Join-Path $env:ProgramFiles 'stremio-htpc'
 $ConfigDir = Join-Path $env:ProgramData 'stremio-htpc'
