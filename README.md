@@ -5,6 +5,9 @@ controlled with an Amazon Fire TV Bluetooth remote. Installs Flathub Stremio,
 BlueZ, keyd, Cage/Xwayland, PipeWire audio and available Mesa/Intel VA-API drivers.
 tty1 automatically logs in and starts a restart-loop kiosk. No desktop is needed.
 
+**Windows 10/11:** see [windows/README.md](windows/README.md) for the Windows
+installer (fullscreen Stremio, Fire TV remote map, optional WireGuard tunnel).
+
 **Status:** initial implementation; macOS static/unit checks only. Real Linux boot,
 Bluetooth, video playback, audio, GPU acceleration and remote timing are unverified.
 Use a dedicated machine, not a desktop whose existing keyd/profile configuration you
