@@ -30,8 +30,20 @@ KeepFullscreen() {
     }
 }
 
+; Closing the window (Alt+F4) hides Stremio to the tray instead of exiting.
+ShowHidden() {
+    if !ProcessExist("stremio-shell-ng.exe") || WinExist(StremioWindow)
+        return
+    DetectHiddenWindows true
+    if hwnd := WinExist(StremioWindow) {
+        WinShow hwnd
+        WinActivate hwnd
+    }
+}
+
 Watchdog() {
     Launch()
+    ShowHidden()
     KeepFullscreen()
 }
 
