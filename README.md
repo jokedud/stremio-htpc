@@ -28,23 +28,25 @@ published branch, change **both** the entrypoint URL and `sudo REPO_RAW=... bash
 
 `HTPC_USER` defaults to the non-root sudo caller; otherwise creates `htpc` with a
 locked password. An existing user is retained. You can specify `sudo HTPC_USER=htpc bash`.
-Pair the remote before rebooting. Stremio account sign-in on screen is still required;
-addon synchronization does not inject a local login session. A new account's login
-may require a temporary keyboard or remote-control app. This does not bypass Stremio's
-own initial setup screens.
+Pair the remote before rebooting. On a fresh installation, the installer seeds a
+local guest addon profile; account sign-in is optional. This does not bypass any
+Stremio initial setup/guest selection screens. Signing into an account switches to
+that account's addon collection; use the optional account sync below to update it.
 
-### Account + private addons
+### Guest profile + private addons
 
 The defaults in [addons.txt](addons.txt) are Torrentio and the supplied public Comet
-configuration. Addons are account-scoped, not a local editable collection file.
+configuration. Both are installed into a fresh local guest profile, alongside
+Cinemeta and OpenSubtitles. All manifests must be reachable during installation.
 Use only streams you are authorized to access. Availability is controlled by the
 addon providers; the supplied Comet configuration has torrent results disabled.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jokedud/stremio-htpc/main/install.sh | sudo EXTRA_ADDONS="https://private.example/token/manifest.json https://other.example/token/manifest.json" STREMIO_EMAIL=you@x bash
+curl -fsSL https://raw.githubusercontent.com/jokedud/stremio-htpc/main/install.sh | sudo EXTRA_ADDONS="https://private.example/token/manifest.json https://other.example/token/manifest.json" bash
 ```
 
-The password is securely prompted via `/dev/tty` if `STREMIO_EMAIL` is set and
+For optional account sync, also supply `STREMIO_EMAIL`. The password is securely
+prompted via `/dev/tty` if `STREMIO_EMAIL` is set and
 `STREMIO_PASSWORD` is absent. For fully unattended operation supply both variables
 from your provisioning secret manager. Passwords/auth keys are never written to disk
 or printed by these scripts. **Shell history, process environments and sudo audit
@@ -53,10 +55,21 @@ in shell history; do not use `set -x`. Child processes inherit the installer env
 
 Private URLs in `EXTRA_ADDONS` (space/newline separated HTTPS manifest URLs) are
 deduplicated into root-owned mode-0600 `/etc/stremio-htpc/addons.local`, never into
-the repository. Existing local URLs and account addons are kept. The sync fetches
+the repository. The kiosk user can necessarily read its own guest profile, which
+contains these URLs; its storage is created with private permissions. Existing
+local URLs and account addons are kept. The sync fetches
 all missing manifests before sending the updated collection; failure aborts the
 write, with a generic error that does not expose tokenized URLs. Avoid simultaneous
 addon edits from other devices during sync (the API has no compare-and-swap here).
+
+Guest provisioning supports the current Stremio 5 Linux Flatpak's WebKit storage
+at `data/stremio/storage`. It runs **only before the first launch** and never edits
+existing storage, guest settings or login sessions. A legacy schema-2 profile is
+seeded and Stremio applies its own schema migrations at first launch. Do not run
+Stremio concurrently with a first installation. Older Qt-based Stremio releases
+use different storage and are not supported by guest provisioning.
+
+### Optional account sync
 
 Run later, prompting for credentials:
 
@@ -64,11 +77,10 @@ Run later, prompting for credentials:
 sudo stremio-htpc-addons
 ```
 
-If no credentials are supplied, account sync is skipped. **Automatic first-boot
-deep-link confirmation is not implemented**: without a Stremio ready/confirmation
-signal, opening a series of links could replace dialogs before you press Select.
-Instead, sign in, run the sync helper from SSH, and restart Stremio; or install each
-addon individually from Stremio's addon UI. A manual deep-link alternative from the
+Without credentials, account sync is skipped, not guest provisioning. For an
+existing installation, sign in, run the sync helper from SSH, and restart Stremio;
+or install each addon individually from Stremio's addon UI. Automatic first-boot
+deep-link confirmation is not implemented. A manual deep-link alternative from the
 running kiosk user's Wayland/X session is:
 
 ```sh
@@ -78,6 +90,24 @@ flatpak run com.stremio.Stremio 'stremio://torrentio.strem.fun/manifest.json'
 Replace only `https://` with `stremio://` for each URL, one at a time, then confirm
 in Stremio. Deep-link dispatch is version-dependent and has not been runtime-tested.
 Do not copy private URLs into shared command histories.
+
+### Standalone download (no GitHub fetch for installer files)
+
+Build a self-contained script from a trusted checkout, optionally bundling a private
+file of HTTPS manifest URLs. The builder refuses output inside the checkout and
+writes mode 0600. Never commit the resulting private installer or share its link
+in public channels.
+
+```sh
+python3 bundle.py /secure/location/stremio.bundle.sh --addons /secure/location/addons.local
+```
+
+The script embeds this version of every installer helper and addon URL; packages,
+Flatpak runtimes and addon manifests still download from their providers. Upload it
+only to storage whose privacy/retention policy you accept, then install with
+`curl -fsSL <download-url> | sudo bash`. An unlisted file-host URL is a bearer link,
+**not access control**: anyone who obtains it can recover the embedded addon URLs.
+Keep a private copy to re-upload if the host expires or removes the file.
 
 ## Pair the Fire TV remote
 
@@ -214,6 +244,7 @@ can read local keyboard events.
 for file in install.sh uninstall.sh lib/*.sh; do bash -n "$file" || exit; done
 shellcheck install.sh uninstall.sh lib/*.sh
 python3 -m unittest discover -s tests -v
+python3 -m compileall -q bundle.py lib tests
 ```
 
 For container provisioning checks, serve this checkout from a trusted reachable
